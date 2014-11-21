@@ -1,0 +1,126 @@
+;IR code
+;LABEL F
+;LINK 
+;STOREI 2 $T1
+;LEI $P1 $T1 label1
+;STOREI 1 $T2
+;SUBI $P1 $T2 $T3
+;PUSH 
+;PUSH $T3
+;JSR F
+;POP 
+;POP $T4
+;STOREI $T4 $L1
+;STOREI 2 $T5
+;SUBI $P1 $T5 $T6
+;PUSH 
+;PUSH $T6
+;JSR F
+;POP 
+;POP $T7
+;STOREI $T7 $L2
+;ADDI $L1 $L2 $T8
+;STOREI $T8 $T9
+;STOREI $T9 $R
+;RET
+;LABEL label1
+;STOREI 0 $T10
+;NEI $P1 $T10 label2
+;STOREI 0 $T11
+;STOREI $T11 $T12
+;STOREI $T12 $R
+;RET
+;JUMP label3
+;LABEL label2
+;STOREI 1 $T13
+;STOREI $T13 $T14
+;STOREI $T14 $R
+;RET
+;LABEL label3
+;LABEL main
+;LINK 
+;STOREI 0 $T1
+;STOREI $T1 $L1
+;WRITES input
+;READI $L2
+;LABEL label4
+;EQI $L1 $L2 label5
+;PUSH 
+;PUSH $L1
+;JSR F
+;POP 
+;POP $T2
+;STOREI $T2 $L3
+;WRITEI $L1
+;WRITES space
+;WRITEI $L3
+;WRITES eol
+;STOREI 1 $T3
+;ADDI $L1 $T3 $T4
+;STOREI $T4 $L1
+;JUMP label4
+;LABEL label5
+;STOREI 0 $T5
+;STOREI $T5 $T6
+;STOREI $T6 $R
+;RET
+;tiny code
+str input "Please input an integer number: "
+str space " "
+str eol "\n"
+label F
+move 2 r0
+cmpi $P1 r0
+jle label1
+move 1 r1
+move null r2
+subi r1 r2
+move $T4 r3
+move 2 r4
+move null r5
+subi r4 r5
+move $T7 r6
+move r3 r7
+addi r6 r7
+move $T8 r8
+move $T9 r9
+sys halt
+label label1
+move 0 r10
+cmpi $P1 r10
+jne label2
+move 0 r11
+move $T11 r12
+move $T12 r13
+sys halt
+jmp label3
+label label2
+move 1 r14
+move $T13 r15
+move $T14 r16
+sys halt
+label label3
+label main
+move 0 r17
+move $T1 r18
+sys writes input
+sys readi $L2 
+label label4
+move $L2 r6
+cmpi $L1 r6
+jeq label5
+move $T2 r19
+sys writei $L1
+sys writes space
+sys writei $L3
+sys writes eol
+move 1 r20
+move r18 r21
+addi r20 r21
+move $T4 r22
+jmp label4
+label label5
+move 0 r23
+move $T5 r24
+move $T6 r25
+sys halt
