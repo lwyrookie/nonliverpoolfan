@@ -1,3 +1,24 @@
+grammar Lex;
+
+options {
+    k = 2;
+    language = Java;
+}
+@header {
+    import java.util.LinkedHashMap;
+    import java.util.Map;
+    import java.util.Iterator;
+    import java.util.Set; 
+}
+@members {
+    public static SymbolTable symtab = new SymbolTable();
+    public static Map<String, Integer> functionMap = new LinkedHashMap();
+    int count = 0;
+    Scope currscope;
+
+     
+}
+
 /* Program */
 @rulecatch {
  	catch (RecognitionException e) {
@@ -69,7 +90,7 @@ param_decl
 	: var_type id {  
                      
                      currscope = symtab.popScope();
-                     currscope.addsymbol(("$P"+$id.text), $var_type.text, null);
+                     currscope.addsymbol(("@P"+$id.text), $var_type.text, null);
                      symtab.pushScopeBack(currscope); }
 	;
 

@@ -12,7 +12,7 @@ options {
 }
 @members {
     public static SymbolTable symtab = new SymbolTable();
-    public static Map<String, Integer> functionMap = new LinkedHashMap();
+    public static Map<String, String> functionMap = new LinkedHashMap<String, String>();
     int count = 0;
     Scope currscope;
 
@@ -110,9 +110,9 @@ func_declarations
 
 
 func_decl  
-    :  'FUNCTION' any_type id { if($any_type.text.equalsIgnoreCase("INT")) functionMap.put($id.text, Integer.valueOf(1));
-	                            if($any_type.text.equalsIgnoreCase("FLOAT")) functionMap.put($id.text, Integer.valueOf(2));
-								if ($any_type.text.equalsIgnoreCase("VOID")) functionMap.put($id.text, Integer.valueOf(6));
+    :  'FUNCTION' any_type id { if($any_type.text.equalsIgnoreCase("INT")) functionMap.put($id.text, "I");
+	                            if($any_type.text.equalsIgnoreCase("FLOAT")) functionMap.put($id.text, "F");
+								if ($any_type.text.equalsIgnoreCase("VOID")) functionMap.put($id.text, "V");
 	                            symtab.pushScope($id.text);}'(' param_decl_list')' 'BEGIN' func_body 'END'
     ;
 

@@ -1,13 +1,70 @@
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Stack;
 
-public class CodeTrans {
+
+    public class CodeTrans {
 	public ArrayList<String> TinyOut = new ArrayList<String>(); // Stores the TinyOutlist
 	public LinkedHashMap<String, String> IrRegMap = new LinkedHashMap<String, String>(); //Stores the mapping between $T and r;
-    private int RegCount = -1;														
+    private int RegCount = -1;			
 
-	public CodeTrans(SymbolTable table, ArrayList<String> outputList) {
-		for (Scope scope : table.scopestack.subList(0, table.scopestack.size())) {
+
+    private ArrayList<String> IR;
+    private SymbolTable table;
+    private int paramIndex; //modify
+    private int labelIndex = 0;
+    private String labelIndicator = null;
+    private int linknum = 0;   //from count
+    private int RPosition = 0;
+    protected Map<String, Map<String, String>> TR = new LinkedHashMap();
+    protected Map<String, Map<String, Node>> tableMap = new LinkedHashMap();
+    protected Map<String, Integer> linkCount = new LinkedHashMap();
+    protected Map<String, ArrayList<String>> tempMap = new LinkedHashMap();	
+   
+  
+   
+     //Map TR as something <scope, ($P1, $17)> as well as registernumber LOCAL temp, tempMap only stores temporary variables;
+    public  CodeTrans(ArrayList<String> outputList, SymbolTable table, Map<String, Map<String, Node>> tableMap, Map<String, ArrayList<String>> tempMap) {
+    this.IR = outputList;
+    this.table = table; 
+    this.paramIndex = 1;  
+    this.RPosition = this.paramIndex;
+    this.tableMap = tableMap;
+    this.tempMap = tempMap;
+
+    for (String key : this.tableMap.keySet()) {
+      Map newTR = new LinkedHashMap();
+for (Node each : (tableMap.get(key)).values()) {
+      
+
+        if ((each.content.contains("$P")) && (!this.TR.containsKey(each.content))) {
+          newTR.put(each.content, "$" + Integer.toString(Integer.parseInt(each.content.substring(2)) + this.paramIndex));
+
+          this.RPosition = (Integer.parseInt(each.content.substring(2)) + this.paramIndex + 1); 
+        }
+        else if (each.content.contains("$L")) {
+          newTR.put(each.content, "$" + Integer.toString(-Integer.parseInt(each.content.substring(2)) - this.labelIndex));
+          this.linknum += 1;
+        }
+        newTR.put("$R", "$" + Integer.toString(this.RPosition));
+        this.TR.put(key, newTR);
+      }
+      this.linkCount.put(key, Integer.valueOf(this.linknum));
+      this.linknum = 0;
+      this.RPosition = this.paramIndex+1;
+}
+
+
+    }
+  
+
+    										
+
+	public void generateTiny() {
+
+
+		for (Scope scope : table.scopestack.subList(0, table.scopestack.size())) { //Do we need this here?
 			if (scope.Scopetype.equalsIgnoreCase("GLOBAL")) { // only scope
 																// global exists
 				for (String key : scope.symbolMap.keySet()) {
@@ -36,589 +93,619 @@ public class CodeTrans {
 
 
 
+    
+       TinyOut.add("push");
+       TinyOut.add("jsr main");
+       TinyOut.add("sys halt");
 
-
-
-
-
-
-
-		
-		for (int i=0; i<outputList.size(); i++){   //iterate over the outputList
-            String[] SubString = outputList.get(i).split("\\s+"); 
-			if (outputList.get(i).contains("STOREI"))
-			{
-				 //split the String by any space
-				if(SubString[2].contains("$")){ // Storei 20 $T1
-				  String reg = createreg(); //r0
-				  TinyOut.add("move "+SubString[1]+ " "+reg); //move 20 r0
-				  IrRegMap.put(SubString[2],reg);
-				}
-				
-					else if (SubString[1].contains("$")){ //store $t1 a
-					TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+SubString[2]);
-				}
-                else{
-                    String reg = createreg(); 
-                    TinyOut.add("move "+SubString[1]+" "+reg);
-                    TinyOut.add("move "+reg+" "+SubString[2]);
-                }
-					
-					
-			}
-
-
-
-
-
-
-
-			
-			if (outputList.get(i).contains("STOREF"))
-			{
-				 //split the String by any space
-				if(SubString[2].contains("$")){ // Storef 20.0 $T1
-				  String reg = createreg(); //r0
-				  TinyOut.add("move "+SubString[1]+" "+reg); //move 20 r0
-				  IrRegMap.put(SubString[2],reg);
-				}
-				
-				else if (SubString[1].contains("$")){ //store $t1 a
-					TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+SubString[2]);
-				}
-                else{
-                    String reg = createreg(); 
-                    TinyOut.add("move "+SubString[1]+" "+reg);
-                    TinyOut.add("move "+reg+" "+SubString[2]);
-                }
-					
-			}
-			
-			/*write operation */
-			if  (outputList.get(i).contains("WRITEI")){ //writei a
-			   //split the String by any space
-			  TinyOut.add("sys writei "+SubString[1]);	
-			}
-			
-			if  (outputList.get(i).contains("WRITEF")){ //writef a
-				   //split the String by any space
-				  TinyOut.add("sys writer "+SubString[1]+" ");	
-			}
-			
-			if  (outputList.get(i).contains("WRITES")){ //writes a
-				   //split the String by any space
-				  TinyOut.add("sys writes "+SubString[1]);	
-			}
-			
-			
-			/*read operation*/
-			if  (outputList.get(i).contains("READI")){ //readi a
-				   //split the String by any space
-				  TinyOut.add("sys readi "+SubString[1]+" ");	
-			}
-				
-		    if  (outputList.get(i).contains("READF")){ //readf a
-					   //split the String by any space
-					  TinyOut.add("sys readr "+SubString[1]+" ");	
-			}
-				
-		    if  (outputList.get(i).contains("READS")){ //reads a
-					   //split the String by any space
-					  TinyOut.add("sys reads "+SubString[1]);	
-			}
-			
-		    /*+*/
-		    if (outputList.get(i).contains("ADDI")){// ADDI $T5 c $T6 // ADDI C $T4 $T9// ADDI $T9 $T7 $T10 //ADDI a b $T5
-				   
-				  String reg = createreg(); //r0
-                  if(SubString[1].contains("$")) //op1 $T
-                	  TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+reg);
-                  else //op1 c
-                	  TinyOut.add("move "+SubString[1]+" "+reg);
-                  IrRegMap.put(SubString[3], reg); //set new mapping
-                  
-                  if(SubString[2].contains("$")) //op2 $T
-                	  TinyOut.add("addi "+IrRegMap.get(SubString[2])+" "+reg);
-                  else
-                	  TinyOut.add("addi "+SubString[2]+" "+reg);
-		    }
-		    
-		    if (outputList.get(i).contains("ADDF")){// ADDF $T5 c $T6 // ADDF C $T4 $T9// ADDF $T9 $T7 $T10 //ADDF a b $T5
-				   
-				  String reg = createreg(); //r0
-                  if(SubString[1].contains("$")) //op1 $T
-                	  TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+reg);
-                  else //op1 c
-                	  TinyOut.add("move "+SubString[1]+" "+reg);
-                  IrRegMap.put(SubString[3], reg); //set new mapping
-                  
-                  if(SubString[2].contains("$")) //op2 $T
-                	  TinyOut.add("addr "+IrRegMap.get(SubString[2])+" "+reg);
-                  else
-                	  TinyOut.add("addr "+SubString[2]+" "+reg);
-		    }
-		    /*-*/
-		    if (outputList.get(i).contains("SUBI")){ //SUBI $T7 a $T8
-				   
-				  String reg = createreg(); //r0
-                  if(SubString[1].contains("$")) //op1 $T
-                	  TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+reg);
-                  else //op1 c
-                	  TinyOut.add("move "+SubString[1]+" "+reg);
-                  IrRegMap.put(SubString[3], reg); //set new mapping
-                  
-                  if(SubString[2].contains("$")) //op2 $T
-                	  TinyOut.add("subi "+IrRegMap.get(SubString[2])+" "+reg);
-                  else
-                	  TinyOut.add("subi "+SubString[2]+" "+reg);
-		    }
-		    
-		    if (outputList.get(i).contains("SUBF")){ //SUBI $T7 a $T8
-				   
-				  String reg = createreg(); //r0
-                  if(SubString[1].contains("$")) //op1 $T
-                	  TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+reg);
-                  else //op1 c
-                	  TinyOut.add("move "+SubString[1]+" "+reg);
-                  IrRegMap.put(SubString[3], reg); //set new mapping
-                  
-                  if(SubString[2].contains("$")) //op2 $T
-                	  TinyOut.add("subr "+IrRegMap.get(SubString[2])+" "+reg);
-                  else
-                	  TinyOut.add("subr "+SubString[2]+" "+reg);
-		    }
-		    
-		    
-		    /*x*/
-		    if (outputList.get(i).contains("MULTI")){ //MULTI $T7 a $T8
-				   
-				  String reg = createreg(); //r0
-                  if(SubString[1].contains("$")) //op1 $T
-                	  TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+reg);
-                  else //op1 c
-                	  TinyOut.add("move "+SubString[1]+" "+reg);
-                  IrRegMap.put(SubString[3], reg); //set new mapping
-                  
-                  if(SubString[2].contains("$")) //op2 $T
-                	  TinyOut.add("muli "+IrRegMap.get(SubString[2])+" "+reg);
-                  else
-                	  TinyOut.add("muli "+SubString[2]+" "+reg);
-		    }
-
-
-
-
-		    
-		    if (outputList.get(i).contains("MULTF")){ //SUBI $T7 a $T8
-				   
-				  String reg = createreg(); //r0
-                  if(SubString[1].contains("$")) //op1 $T
-                	  TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+reg);
-                  else //op1 c
-                	  TinyOut.add("move "+SubString[1]+" "+reg);
-                  IrRegMap.put(SubString[3], reg); //set new mapping
-                  
-                  if(SubString[2].contains("$")) //op2 $T
-                	  TinyOut.add("mulr "+IrRegMap.get(SubString[2])+" "+reg);
-                  else
-                	  TinyOut.add("mulr "+SubString[2]+" "+reg);
-		    }
-		    
-		    /*/*/
-		    if (outputList.get(i).contains("DIVI")){ //SUBI $T7 a $T8
-				   
-				  String reg = createreg(); //r0
-                  if(SubString[1].contains("$")) //op1 $T
-                	  TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+reg);
-                  else //op1 c
-                	  TinyOut.add("move "+SubString[1]+" "+reg);
-                  IrRegMap.put(SubString[3], reg); //set new mapping
-                  
-                  if(SubString[2].contains("$")) //op2 $T
-                	  TinyOut.add("divi "+IrRegMap.get(SubString[2])+" "+reg);
-                  else
-                	  TinyOut.add("divi "+SubString[2]+" "+reg);
-		    }
-		    
-		    if (outputList.get(i).contains("DIVF")){ //SUBI $T7 a $T8
-				   
-				  String reg = createreg(); //r0
-
-                  if(SubString[1].contains("$")) //op1 $T
-                	  TinyOut.add("move "+IrRegMap.get(SubString[1])+" "+reg);
-                  else //op1 c
-                	  TinyOut.add("move "+SubString[1]+" "+reg);
-                  IrRegMap.put(SubString[3], reg); //set new mapping
-                  
-                  if(SubString[2].contains("$")) //op2 $T
-                	  TinyOut.add("divr "+IrRegMap.get(SubString[2])+" "+reg);
-                  else
-                	  TinyOut.add("divr "+SubString[2]+" "+reg);
-		    }
-		    
-
-
-            if (outputList.get(i).contains("LABEL")){ 
-                
-			    TinyOut.add("label " + SubString[1]);
-		    }
-
-
-            if (outputList.get(i).contains("JUMP")){ 
-                
-			    TinyOut.add("jmp " + SubString[1]);
-		    }
-
-
-// Comparison
-                    
-else if (SubString[0].equalsIgnoreCase("LEI"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jle " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jle " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jle " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jle " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("GEI"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jge " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jge " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jge " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jge " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("NEI"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jne " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jne " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jne " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jne " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("EQI"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jeq " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jeq " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jeq " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jeq " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("GTI"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jgt " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jgt " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jgt " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jgt " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("LTI"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jlt " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jlt " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jlt " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jlt " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("LEF"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jle " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jle " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jle " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jle " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("GEF"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jge " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jge " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jge " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jge " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("NEF"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jne " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jne " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jne " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jne " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("EQF"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jeq " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jeq " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jeq " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jeq " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("GTF"))
-      {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jgt " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jgt " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jgt " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jgt " + SubString[3]);
-        }
-      }
-      else if (SubString[0].equalsIgnoreCase("LTF")) {
-        if ((SubString[1].contains("$T")) && (SubString[2].contains("$T")))
-        {
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jlt " + SubString[3]);
-        }
-        else if (SubString[1].contains("$T"))
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
-          TinyOut.add("jlt " + SubString[3]);
-        }
-        else if (SubString[2].contains("$T"))
-        {
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jlt " + SubString[3]);
-        }
-        else
-        {
-          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
-          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
-          TinyOut.add("jlt " + SubString[3]);
-        }
-      }
-
-
-
-
-
-            
-		    if (outputList.get(i).contains("RET")){ 
-			   TinyOut.add("sys halt");
-		    }
-		    
          
 
 
 
 
-
-
-		    else   //further modification  like Link, LABEL
-		    	;
-		    
-		    
-		}
-		 
 		
-	}
+		for (int i=0; i<IR.size(); i++){   
+            String[] SubString = IR.get(i).split("\\s+"); 
+              if (SubString[0].equalsIgnoreCase("STOREI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + SubString[2]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[2]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("move " + createTemp(SubString[2]) + " " + SubString[2]);
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("MULTI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("muli " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("muli " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("muli " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("muli " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("ADDI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("addi " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("addi " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("addi " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("addi " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("DIVI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("divi " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("divi " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("divi " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("divi " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("SUBI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("subi " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("subi " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("subi " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("subi " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("WRITEI")) {
+        if (SubString[1].contains("$")) {
+          TinyOut.add("sys writei " + createTemp(SubString[1]));
+        }
+        else {
+          TinyOut.add("sys writei " + SubString[1]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("WRITES")) {
+        TinyOut.add("sys writes " + SubString[1]);
+      }
+      else if (SubString[0].equalsIgnoreCase("READI")) {
+        if (SubString[1].contains("$")) {
+          TinyOut.add("sys readi " + createTemp(SubString[1]));
+        }
+        else {
+          TinyOut.add("sys readi " + SubString[1]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("STOREF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + SubString[2]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[2]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("move " + createTemp(SubString[2]) + " " + SubString[2]);
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("MULTF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("mulr " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("mulr " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("mulr " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("mulr " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("ADDF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("addr " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("addr " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("addr " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("addr " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("DIVF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("divr " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("divr " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("divr " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("divr " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("SUBF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("subr " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(SubString[3]));
+          TinyOut.add("subr " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("subr " + createTemp(SubString[2]) + " " + createTemp(SubString[3]));
+        }
+        else {
+          TinyOut.add("move " + SubString[1] + " " + createTemp(SubString[3]));
+          TinyOut.add("subr " + SubString[2] + " " + createTemp(SubString[3]));
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("WRITEF")) {
+        if (SubString[1].contains("$")) {
+          TinyOut.add("sys writer " + createTemp(SubString[1]) + " ");
+        }
+        else {
+          TinyOut.add("sys writer " + SubString[1] + " ");
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("READF")) {
+        if (SubString[1].contains("$")) {
+          TinyOut.add("sys readr " + createTemp(SubString[1]) + " ");
+        }
+        else {
+          TinyOut.add("sys readr " + SubString[1] + " ");
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("LABEL")) {
+        TinyOut.add("label " + SubString[1] + " ");
+        if (!SubString[1].contains("label")) {
+          this.labelIndicator = SubString[1];
+        }
+      }
+      else if (SubString[0].equalsIgnoreCase("JUMP")) {
+        TinyOut.add("jmp " + SubString[1] + " ");
+      }
+      else if (SubString[0].equalsIgnoreCase("LEI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jle " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jle " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jle " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jle " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("GEI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jge " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jge " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jge " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jge " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("NEI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jne " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jne " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jne " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jne " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("EQI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jeq " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jeq " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jeq " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jeq " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("GTI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jgt " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jgt " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jgt " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jgt " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("LTI")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jlt " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jlt " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jlt " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpi " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jlt " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("LEF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jle " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jle " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jle " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jle " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("GEF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jge " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jge " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jge " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jge " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("NEF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jne " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jne " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jne " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jne " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("EQF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jeq " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jeq " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jeq " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jeq " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("GTF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jgt " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jgt " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jgt " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jgt " + SubString[3]);
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("LTF")) {
+        if ((SubString[1].contains("$")) && (SubString[2].contains("$"))) {
+          if ((SubString[1].contains("$P")) || (SubString[1].contains("$L")) || (SubString[2].contains("$P")) || (SubString[2].contains("$L"))) {
+            TinyOut.add("move " + createTemp(SubString[2]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp((tempMap.get(labelIndicator)).get((tempMap.get(labelIndicator)).size() - 1)));
+          }
+          else {
+            TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          }
+          TinyOut.add("jlt " + SubString[3]);
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + createTemp(SubString[1]) + " " + createTemp(SubString[2]));
+          TinyOut.add("jlt " + SubString[3]);
+        }
+        else if (SubString[2].contains("$")) {
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jlt " + SubString[3]);
+        }
+        else {
+          TinyOut.add("move " + SubString[2] + " " + createTemp(SubString[2]));
+          TinyOut.add("cmpr " + SubString[1] + " " + createTemp(SubString[2]));
+          TinyOut.add("jlt " + SubString[3]);
+        }
+
+      }
+
+
+
+
+ else if (SubString[0].equalsIgnoreCase("jsr")) {
+   
+        TinyOut.add("jsr " + SubString[1] );
+  
+      }
+      else if (SubString[0].equalsIgnoreCase("push")) {
+        if (SubString.length == 1) {
+          TinyOut.add("push");
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("push " + createTemp(SubString[1]) );
+        }
+        else {
+          TinyOut.add("push " + SubString[1] );
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("pop")) {
+        if (SubString.length == 1) {
+          TinyOut.add("pop");
+        }
+        else if (SubString[1].contains("$")) {
+          TinyOut.add("pop " + createTemp(SubString[1]) );
+        }
+        else {
+          TinyOut.add("pop " + SubString[1] );
+        }
+
+      }
+      else if (SubString[0].equalsIgnoreCase("link")) {
+        TinyOut.add("link " + this.linkCount.get(this.labelIndicator) );
+      }
+      else if (SubString[0].equalsIgnoreCase("RET")) {
+        TinyOut.add("unlnk");
+        TinyOut.add("ret");
+      }
+    }
+
+    TinyOut.add("end");
+
+	}	
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
+// return r# /$#
 
    public String createTemp(String temp) {
+   if (temp.contains("$T")){
     if (IrRegMap.get(temp) != null) {
       return (IrRegMap.get(temp));
     }
@@ -630,21 +717,21 @@ else if (SubString[0].equalsIgnoreCase("LEI"))
   }
 
 
+//$p, $L case
+  else{
+     if (((Map)this.TR.get(this.labelIndicator)).containsKey(temp)) 
+      return (String)((Map)this.TR.get(this.labelIndicator)).get(temp);
+    
+  
+  }
+  return ("Error");
+  
+  }
 
 
-	public String createreg()
-	{
-		//Register number limitation need to be added in the future
-		RegCount+=1; 
-		return "r"+Integer.toString(RegCount); //return r0
-	}
+
  
-
-
-
-
-   
-    public void printIR() {
+    public void printTiny() {
       String result = "";
       for (int i = 0; i < TinyOut.size()-1; i++) {
      
@@ -656,4 +743,5 @@ else if (SubString[0].equalsIgnoreCase("LEI"))
      //return result;    
   }
 
-}
+
+}//end of class

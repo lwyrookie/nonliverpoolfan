@@ -143,9 +143,21 @@ public class SuperVisitor extends LexBaseVisitor<Node> {
 
 		this.outputList.add("LABEL " + ctx.id().getText());
 		this.functionRecord = ctx.id().getText();
+/*--------------------lou modify-----------------*/  
+
+      //  createTemp();    //leaving an extra slot for all the comparison in the each scope
+      // this.tempIndex += 1;
+	//	((ArrayList)this.tempMap.get(this.functionRecord)).add("$T"
+	//			+ Integer.toString(this.tempIndex));
+
+
+
+
 		this.tempMap.put(this.functionRecord, newTempList);
+       
 		this.outputList.add("LINK ");
 		visitChildren(ctx);
+        createTemp(); 
 		//this.tempIndex = 0;
 		if (ctx.any_type().getText().equals("VOID")) {
 			this.outputList.add("RET");

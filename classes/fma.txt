@@ -8,10 +8,10 @@
 ;RET
 ;LABEL multiply
 ;LINK 
-;MULTF $P1 $P2 $T1
-;STOREF $T1 $L1
-;STOREF $L1 $T2
-;STOREF $T2 $R
+;MULTF $P1 $P2 $T4
+;STOREF $T4 $L1
+;STOREF $L1 $T5
+;STOREF $T5 $R
 ;RET
 ;LABEL main
 ;LINK 
@@ -28,16 +28,16 @@
 ;JSR multiply
 ;POP 
 ;POP 
-;POP $T1
-;STOREF $T1 $L5
+;POP $T7
+;STOREF $T7 $L5
 ;PUSH 
 ;PUSH $L5
 ;PUSH $L3
 ;JSR add
 ;POP 
 ;POP 
-;POP $T2
-;STOREF $T2 $L4
+;POP $T8
+;STOREF $T8 $L4
 ;WRITEF $L1
 ;WRITES star
 ;WRITEF $L2
@@ -46,9 +46,9 @@
 ;WRITES equal
 ;WRITEF $L4
 ;WRITES eol
-;STOREI 0 $T3
-;STOREI $T3 $T4
-;STOREI $T4 $R
+;STOREI 0 $T9
+;STOREI $T9 $T10
+;STOREI $T10 $R
 ;RET
 ;tiny code
 str intro "You will be asked for three float numbers\n"
@@ -59,39 +59,63 @@ str eol "\n"
 str star "*"
 str plus "+"
 str equal "="
-label add
-move null r0
-addr null r0
-move $T1 r1
-move $L1 r2
-move $T2 r3
+push
+jsr main
 sys halt
-label multiply
-move null r4
-mulr null r4
-move $T1 r5
-move $L1 r6
-move $T2 r7
-sys halt
-label main
+label add 
+link 1
+move $2 r0
+addr $3 r0
+move r0 $-1
+move $-1 r1
+move r1 $4
+unlnk
+ret
+label multiply 
+link 1
+move $2 r2
+mulr $3 r2
+move r2 $-1
+move $-1 r3
+move r3 $4
+unlnk
+ret
+label main 
+link 5
 sys writes intro
 sys writes first
-sys readr $L1 
+sys readr $-1 
 sys writes second
-sys readr $L2 
+sys readr $-2 
 sys writes third
-sys readr $L3 
-move $T1 r8
-move $T2 r9
-sys writer $L1 
+sys readr $-3 
+push
+push $-1
+push $-2
+jsr multiply
+pop
+pop
+pop r4
+move r4 $-5
+push
+push $-5
+push $-3
+jsr add
+pop
+pop
+pop r5
+move r5 $-4
+sys writer $-1 
 sys writes star
-sys writer $L2 
+sys writer $-2 
 sys writes plus
-sys writer $L3 
+sys writer $-3 
 sys writes equal
-sys writer $L4 
+sys writer $-4 
 sys writes eol
-move 0 r10
-move $T3 r11
-move $T4 r12
-sys halt
+move 0 r6
+move r6 r7
+move r7 $2
+unlnk
+ret
+end
