@@ -39,6 +39,21 @@ public class Scope {
 
 	}
 
+	public void addsymbol(String name, String type, String value, String nodePrefix)// Symbol
+																	// should
+																	// contain
+	// private field of name
+	{
+		// tell if same variable exists in current Scope
+		if (symbolMap.containsKey(name)) {
+			throw new IllegalArgumentException("DECLARATION ERROR " + name);
+		}
+
+		// not in current scope, add the new symbol to the Scope
+		Symbol symbol = new Symbol(name, type, value, nodePrefix);
+		symbolMap.put(name, symbol);
+
+	}
 	// need to modify
 
 	public void addsymbols(String name, String type, String value)// Symbol
@@ -58,6 +73,23 @@ public class Scope {
 		}
 	}
 
+	public void addsymbols(String name, String type, String value, String nodePrefix)// Symbol
+																	// should
+																	// contain
+	// private field of name
+	{
+		int i;
+		String[] nameArray = name.split(",");
+		for (i = 0; i < nameArray.length; i++) {
+			if (symbolMap.containsKey(nameArray[i].trim())) {
+				throw new IllegalArgumentException("DECLARATION ERROR " + nameArray[i].trim());
+			} else {
+				Symbol symbol = new Symbol(nameArray[i].trim(), type, value, nodePrefix);
+				symbolMap.put(nameArray[i].trim(), symbol);
+			}
+		}
+	}
+	
 	public Symbol resolve(String name) {
 		Symbol symbol = symbolMap.get(name);
 		if (symbol != null)
@@ -84,9 +116,10 @@ public class Scope {
             //System.out.println(pairs.getKey() + " = " + pairs.getValue());
             //it.remove(); // avoids a ConcurrentModificationException
             if(((Symbol) pairs.getValue()).getType() == "STRING")
-                sb.append("name "+pairs.getKey()+" type STRING value "+((Symbol) pairs.getValue()).getValue()+"\n");
+                //sb.append("name "+pairs.getKey()+" type STRING value "+((Symbol) pairs.getValue()).getValue()+"\n");
+                sb.append("name "+pairs.getKey()+" type STRING value "+((Symbol) pairs.getValue()).getValue()+ "nodePrefix"+((Symbol) pairs.getValue()).getPrefix()+ "\n");
             else
-                sb.append("name "+pairs.getKey()+" type "+((Symbol) pairs.getValue()).getType()+"\n");
+                sb.append("name "+pairs.getKey()+" type "+((Symbol) pairs.getValue()).getType()+"nodePrefix"+((Symbol) pairs.getValue()).getPrefix()+"\n");
                 
         }  
             String temp = sb.toString().replace("[", "").replace("]", "");

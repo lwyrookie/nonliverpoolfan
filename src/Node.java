@@ -1,9 +1,9 @@
 public class Node
 {
   public String content;
-  public int type;
+  public String type;
   
-  public Node(String newContent, int newType)
+  public Node(String newContent, String newType)
   {
     this.content = newContent;
     this.type = newType;
@@ -11,6 +11,7 @@ public class Node
   
   public String toString()
   {
+
     return this.content;
   }
 }

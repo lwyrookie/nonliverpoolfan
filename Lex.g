@@ -15,8 +15,8 @@ options {
     public static Map<String, String> functionMap = new LinkedHashMap<String, String>();
     int count = 0;
     Scope currscope;
-
-     
+	int paramvarCount = 0;
+	int localvarCount = 0;    
 }
 
 /* Program */
@@ -34,7 +34,11 @@ program
 //          Set entrySet = functionMap.entrySet();
 //          Iterator it = entrySet.iterator();
 //          while(it.hasNext())
-//              System.out.println(it.next());}  
+//              System.out.println(it.next());
+              //{  
+                //System.out.println(symtab.toString());
+                //System.out.println("Local Count" + localvarCount);
+				//System.out.println("Parm Count" + paramvarCount);}  
 	;
 id
 	:	IDENTIFIER
@@ -52,7 +56,12 @@ decl
 /* Global String Declaration */
 string_decl       
 	:	'STRING' id ':=' str ';' {  currscope = symtab.popScope();
-                                    currscope.addsymbol($id.text, "STRING", $str.text);
+	                                if(!currscope.Scopetype.equalsIgnoreCase("GLOBAL")) {
+                                        ++localvarCount; 									
+							            currscope.addsymbol($id.text, "STRING", $str.text, "@L" + Integer.toString(localvarCount)); 
+									}
+                                    else 
+							            currscope.addsymbol($id.text, "STRING", $str.text);                                  
                                     symtab.pushScopeBack(currscope); }
 	;
 str               
@@ -63,7 +72,16 @@ str
 /* Variable Declaration */
 var_decl          
 	: var_type id_list ';' {  currscope = symtab.popScope();
-                              currscope.addsymbols($id_list.text, $var_type.text, null);
+	                          if(!currscope.Scopetype.equalsIgnoreCase("GLOBAL")) {
+								  String[] idlist = ($id_list.text).split(",");
+								  int i;
+		                          for (i = 0; i < idlist.length; i++) {
+								      ++localvarCount; 
+								      currscope.addsymbol(idlist[i].trim(), $var_type.text, null, "@L" + Integer.toString(localvarCount)); 
+								  }
+							  }
+                              else 
+							      currscope.addsymbols($id_list.text, $var_type.text, null);
                               symtab.pushScopeBack(currscope); }
 	;
 var_type	      
@@ -88,9 +106,9 @@ param_decl_list
 
 param_decl        
 	: var_type id {  
-                     
                      currscope = symtab.popScope();
-                     currscope.addsymbol(("@P"+$id.text), $var_type.text, null);
+					 ++paramvarCount;
+					 currscope.addsymbol($id.text,$var_type.text, null, "@P" + Integer.toString(paramvarCount));
                      symtab.pushScopeBack(currscope); }
 	;
 
@@ -113,7 +131,9 @@ func_decl
     :  'FUNCTION' any_type id { if($any_type.text.equalsIgnoreCase("INT")) functionMap.put($id.text, "I");
 	                            if($any_type.text.equalsIgnoreCase("FLOAT")) functionMap.put($id.text, "F");
 								if ($any_type.text.equalsIgnoreCase("VOID")) functionMap.put($id.text, "V");
-	                            symtab.pushScope($id.text);}'(' param_decl_list')' 'BEGIN' func_body 'END'
+	                            symtab.pushScope($id.text);
+								localvarCount = 0;
+								paramvarCount = 0;}'(' param_decl_list')' 'BEGIN' func_body 'END'
     ;
 
 
@@ -209,13 +229,13 @@ mulop
 /* Complex Statements and Condition */ 
 if_stmt
     : { count = count + 1;
-          symtab.pushScope("BLOCK "+ String.valueOf(count));} 'IF' '(' cond ')' decl stmt_list else_part 'ENDIF'
+        symtab.pushScope("BLOCK "+ String.valueOf(count));} 'IF' '(' cond ')' decl stmt_list else_part 'ENDIF'
     ;
 
 
 else_part 
     :  { count = count + 1;
-            symtab.pushScope("BLOCK "+ String.valueOf(count));} 'ELSE' decl stmt_list 
+         symtab.pushScope("BLOCK "+ String.valueOf(count));} 'ELSE' decl stmt_list 
     | /* */
     ;
 
@@ -251,13 +271,13 @@ aug_stmt
 /* Augmented IF statements for ECE 573 students */ 
 aug_if_stmt 
     : { count = count + 1;
-          symtab.pushScope("BLOCK "+ String.valueOf(count));} 'IF' '(' cond ')' decl aug_stmt_list aug_else_part 'ENDIF'
+        symtab.pushScope("BLOCK "+ String.valueOf(count));} 'IF' '(' cond ')' decl aug_stmt_list aug_else_part 'ENDIF'
     ;
 
 
 aug_else_part 
     : 	{ count = count + 1;
-           symtab.pushScope("BLOCK "+ String.valueOf(count));} 'ELSE'  decl aug_stmt_list
+          symtab.pushScope("BLOCK "+ String.valueOf(count));} 'ELSE'  decl aug_stmt_list
     | /* */
     ;
 

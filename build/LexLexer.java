@@ -52,11 +52,11 @@ public class LexLexer extends Lexer {
 
 
 	    public static SymbolTable symtab = new SymbolTable();
-	    public static Map<String, Integer> functionMap = new LinkedHashMap();
+	    public static Map<String, String> functionMap = new LinkedHashMap<String, String>();
 	    int count = 0;
 	    Scope currscope;
-
-	     
+		int paramvarCount = 0;
+		int localvarCount = 0;    
 
 
 	public LexLexer(CharStream input) {
