@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Stack;
-import java.util.HashSet;
+import java.util.HashMap;
 
 
     public class CodeTrans {
@@ -145,27 +145,27 @@ import java.util.HashSet;
              String command =SubString[0];
 
 
-          if (opCommands.contains(command)){
-             System.out.println("Check opcommand match: %s", command);
+          if (opCommands.containsKey(command)){
+             System.out.println("Check opcommand match:"+ command);
              getTinyOp(SubString);       
           }
 
-         else if (rwCommands.contains(command)){
-             System.out.println("Check rwcommand match: %s", command);
+         else if (rwCommands.containsKey(command)){
+             System.out.println("Check rwcommand match: "+ command);
              getTinyRw(SubString);
           }
-         else if (compCommands.contains(command)){
-             System.out.println("Check compcommand match: %s", command);
+         else if (compCommands.containsKey(command)){
+             System.out.println("Check compcommand match: "+ command);
              getTinyComp(SubString);
 
          }
          else if (command.contains("STORE")){
-             System.out.println("Check store command match: %s", command);
+             System.out.println("Check store command match: "+ command);
              getTinyStore(SubString);
 
          }
          else if (command.contains("PUSH") || command.contains("POP")){
-             System.out.println("Check PUSH/POP command match: %s", command);
+             System.out.println("Check PUSH/POP command match: "+ command);
              getTinyPp(SubString);
          }
 
@@ -936,9 +936,10 @@ import java.util.HashSet;
 
      public String createTiny(String temp) {
        if (temp.contains("$T")){
+            String r;
             if (IrRegMap.get(temp) != null) 
            //   return (IrRegMap.get(temp));
-               String r = IrRegMap.get(temp);
+             r = IrRegMap.get(temp);
             
            this.RegCount += 1;
            r = "r" + Integer.toString(RegCount);
@@ -952,7 +953,10 @@ import java.util.HashSet;
       
        }
      //intliteral
-       else return temp;  //may have error here
+       else 
+       return temp;  //may have error here
+
+      return null;
 
      }
 
@@ -968,7 +972,7 @@ import java.util.HashSet;
 
        TinyOut.add("move " + createTiny(SubString[1]) + " " + createTiny(SubString[3]));
        TinyOut.add(opCommands.get(SubString[0]) + " "+ createTiny(SubString[2]) + " " + createTiny(SubString[3]));
-       return null ;
+     //  return null ;
       }
 
 
@@ -976,19 +980,19 @@ import java.util.HashSet;
        private void getTinyRw(String[] SubString){
 
        TinyOut.add(rwCommands.get(SubString[0])+" " + createTiny(SubString[1]));
-       return null ;
+      // return null ;
 
       }
        
 
   
       private void getTinyComp(String[] SubString){
-      System.out.println("INT compare check %s", SubString[0]);
-            String suffix = SubString[0].charAt(SubString[0].length() - 1)).toLowerCase(); 
-            if (suffix.contains("f")) 
+      System.out.println("INT compare check: "+ SubString[0]);
+            //String suffix = (SubString[0].charAt((SubString[0].length() - 1))); 
+            String suffix = SubString[0].substring(SubString[0].length() - 1);
             suffix ="r";
  
-            System.out.println("suffix is %s", suffix);
+            System.out.println("suffix is: " + suffix);
 
             String tempReg = createTiny(SubString[2]); //may be a memory address
             if(!(SubString[2].contains("$T")))  {
@@ -999,7 +1003,7 @@ import java.util.HashSet;
             TinyOut.add(compCommands.get(SubString[0])+ " " + SubString[3]);
       
 
-       return null ;
+     //  return null ;
 
       }
     
@@ -1009,29 +1013,29 @@ import java.util.HashSet;
        //if  store  a b case, both oprands in global, 
          String cheatSubString = SubString[2];
          System.out.println("STORE before substring2");
-          if((LexParser.symtab).get("GLOBAL").contains(SubString[1]) && (LexParser.symtab).get("GLOBAL").contains(SubString[2])){
-         System.out.println("STORE special case, both global, force change to new substring %s", cheatSubString);
+          if((LexParser.symtab).get("GLOBAL").symbolMap.containsKey(SubString[1]) && (LexParser.symtab).get("GLOBAL").symbolMap.containsKey(SubString[2])){
+         System.out.println("STORE special case, both global, force change to new substring: " + cheatSubString);
                cheatSubString ="$T"+SubString[2];
-               TinyOut.add("move " + createTemp(SubString[1]) + " " + createTemp(cheatSubString));   
+               TinyOut.add("move " + createTiny(SubString[1]) + " " + createTiny(cheatSubString));   
            }
 
-          TinyOut.add("move " + createTemp(cheatSubString) + " " + SubString[2]);
+          TinyOut.add("move " + createTiny(cheatSubString) + " " + SubString[2]);
         
-       return null ;
+     //  return null ;
 
       }
 
 
 
 
-     private void getTinyPp(String[] SubString){
+     public  void getTinyPp(String[] SubString){
 
         String ppCom = SubString[0].toLowerCase();
         if (SubString.length == 1) 
           TinyOut.add(ppCom);
         else  
           TinyOut.add(ppCom+ " " + createTiny(SubString[1]) );   
-        return null ;
+        return;
       }
 
 
