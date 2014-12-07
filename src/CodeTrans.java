@@ -9,19 +9,11 @@ import java.util.HashMap;
 	public ArrayList<String> TinyOut = new ArrayList<String>(); // Stores the TinyOutlist
 	//public LinkedHashMap<String, String> IrRegMap = new LinkedHashMap<String, String>(); //Stores the mapping between $T and r;
     //private int RegCount = -1;			
-
+    public Map<String, Map<String, String>> tempToReg = new LinkedHashMap();
 
 
     private ArrayList<String> IR;
-   // private SymbolTable table;
-   // private int paramIndex; //modify
-   // private int labelIndex = 0;
     private String labelIndicator = null;
-  //  private int linknum = 0;   //from count
- //   private int RPosition = 0;
-   // protected Map<String, Map<String, String>> TR = new LinkedHashMap();
- //   protected Map<String, Map<String, Node>> tableMap = new LinkedHashMap();
-   // protected Map<String, Integer> linkCount = new LinkedHashMap();
     protected Map<String, ArrayList<String>> tempMap = new LinkedHashMap();	
    
 
@@ -132,10 +124,12 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
 
 
 
-       public void generateTiny() {
+
+      public void generateTiny() {
+
          Scope scope = (LexParser.symtab).get("GLOBAL");
          for (String key : scope.symbolMap.keySet()) 
-            TinyOut.add ( typeTrans(scope.symbolMap.get(key).getType())+key);  
+            TinyOut.add ( typeTrans(scope.symbolMap.get(key).getType())+key+" "+ scope.symbolMap.get(key).getValue());  
           
          TinyOut.add("push");
          TinyOut.add("jsr main");
@@ -150,26 +144,26 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
 
 
           if (opCommands.containsKey(command)){
-             System.out.println("Check opcommand match:"+ command);
+          //   System.out.println("Check opcommand match:"+ command);
              getTinyOp(SubString);       
           }
 
          else if (rwCommands.containsKey(command)){
-             System.out.println("Check rwcommand match: "+ command);
+          //   System.out.println("Check rwcommand match: "+ command);
              getTinyRw(SubString);
           }
          else if (compCommands.containsKey(command)){
-             System.out.println("Check compcommand match: "+ command);
+          //   System.out.println("Check compcommand match: "+ command);
              getTinyComp(SubString);
 
          }
          else if (command.contains("STORE")){
-             System.out.println("Check store command match: "+ command);
+          //   System.out.println("Check store command match: "+ command);
              getTinyStore(SubString);
 
          }
          else if (command.contains("PUSH") || command.contains("POP")){
-             System.out.println("Check PUSH/POP command match: "+ command);
+          //   System.out.println("Check PUSH/POP command match: "+ command);
              getTinyPp(SubString);
          }
 
@@ -198,13 +192,13 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
       }
       
       
-      TinyOut.add("end");
-
+      
  	}
 
 
 
 
+      TinyOut.add("end");
 
 
 
@@ -942,7 +936,7 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
        Function targetFunc = LexParser.funcHub.get(labelIndicator);
        if (temp.contains("$T")){
           
-            String r = targetFunc.functioninfo.get("$T"+Integer.toString(targetFunc.locNum));
+            String r = targetFunc.tempToReg.get("$T"+Integer.toString(targetFunc.tempNum));
 /*
             if (IrRegMap.get(temp) != null) 
              return (IrRegMap.get(temp));
@@ -950,21 +944,18 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
            this.RegCount += 1;
            r = "r" + Integer.toString(RegCount);
            IrRegMap.put(temp, r);
-*/         if (targetFunc.functioninfo.containsKey(temp))
-           return targetFunc.functioninfo.get(temp);
-           else
-           return r;
+*/         if (targetFunc.tempToReg.containsKey(temp))
+           return targetFunc.tempToReg.get(temp);
+           else  return r;
 
        }
 
-       else if ( (temp.contains("$P")) || (temp.contains("$L")) ){
-          // if (((Map)this.TR.get(this.labelIndicator)).containsKey(temp)) 
-           //return (String)((Map)this.TR.get(this.labelIndicator)).get(temp);
+       else if ( (temp.contains("$P"))||(temp.contains("$L")) || (temp.contains("$R")) ){
+           //System.out.println("%L hasspens?"+temp);
            if (targetFunc.functioninfo.containsKey(temp))
              return targetFunc.functioninfo.get(temp);
       
        }
-     //intliteral
        else 
        return temp;  //may have error here
 
@@ -1022,18 +1013,16 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
       
 
       private void getTinyStore(String[] SubString){
-       //if  store  a b case, both oprands in global, 
          String cheatSubString = SubString[2];
-         System.out.println("STORE before substring2");
+        // System.out.println("STORE before substring2");
           if((LexParser.symtab).get("GLOBAL").symbolMap.containsKey(SubString[1]) && (LexParser.symtab).get("GLOBAL").symbolMap.containsKey(SubString[2])){
-         System.out.println("STORE special case, both global, force change to new substring: " + cheatSubString);
+        // System.out.println("STORE special case, both global, force change to new substring: " + cheatSubString);
                cheatSubString ="$T"+SubString[2];
-               TinyOut.add("move " + createTiny(SubString[1]) + " " + createTiny(cheatSubString));   
+               TinyOut.add("move " + createTiny(SubString[1]) + " " + createTiny(cheatSubString));  
+               TinyOut.add("move " + createTiny(cheatSubString) + " " + SubString[2]); 
            }
-
-          TinyOut.add("move " + createTiny(cheatSubString) + " " + SubString[2]);
-        
-     //  return null ;
+          else
+               TinyOut.add("move " + createTiny(SubString[1]) + " " + createTiny(cheatSubString));  
 
       }
 
