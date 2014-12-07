@@ -39,15 +39,22 @@ public class Function {
 			 this.functioninfo.put("$P"+Integer.toString(i), "$"+Integer.toString(i)); //setting parameter positions
 		 }
 		 
-		 i++;
 		 this.functioninfo.put("$R","$"+Integer.toString(i));  //setting return position
 		 
 		 for(i=1; i<loc; i++){
 			 memid = -1*i;
 			 this.functioninfo.put("$L"+Integer.toString(i), "$"+Integer.toString(memid));
 		 }
+
+
+/*for test*/
+/*
+        for (HashMap.Entry<String, String> entry : functioninfo.entrySet())
+        {
+          System.out.println(entry.getKey() + "/" + entry.getValue());
+        }
 			 
-			 
+*/			 
 	 }
 	 
 	 

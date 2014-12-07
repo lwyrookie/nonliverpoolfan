@@ -38,10 +38,10 @@ program
 //          Iterator it = entrySet.iterator();
 //          while(it.hasNext())
 //              System.out.println(it.next());
-              {  
-                System.out.println(symtab.toString());
-                System.out.println("Local Count" + localvarCount);
-				System.out.println("Parm Count" + paramvarCount);}  
+             // {  
+             //   System.out.println(symtab.toString());
+             //   System.out.println("Local Count" + localvarCount);
+			//	System.out.println("Parm Count" + paramvarCount);}  
 	;
 id
 	:	IDENTIFIER
