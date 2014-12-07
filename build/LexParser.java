@@ -1022,9 +1022,9 @@ public class LexParser extends Parser {
 			setState(177); stmt_list();
 			 newFunc.setLocalParReturn(localvarCount, paramvarCount);
 			      funcHub.put(newFunc.funcName, newFunc);
-			      System.out.println("function name" + newFunc.funcName);
-			      System.out.println("Local Count" + localvarCount);
-				  System.out.println("Parm Count" + paramvarCount);  
+			    //  System.out.println("function name" + newFunc.funcName);
+			    //  System.out.println("Local Count" + localvarCount);
+				//  System.out.println("Parm Count" + paramvarCount);  
 			    
 			}
 		}

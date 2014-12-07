@@ -69,11 +69,11 @@ public class Micro
 
 
 /*reactivate following*/
-   //    SuperVisitor visitor = new SuperVisitor(LexParser.symtab, LexParser.functionMap); //?
-  //    visitor.visit(tree);
-  //    visitor.return3AC();
-  //    CodeTrans ircode = new CodeTrans(visitor.outputList, LexParser.symtab, visitor.tableMap, visitor.tempMap);
-  //   ircode.generateTiny();
+       SuperVisitor visitor = new SuperVisitor(LexParser.symtab, LexParser.functionMap); //?
+       visitor.visit(tree);
+       visitor.return3AC();
+   //    CodeTrans ircode = new CodeTrans(visitor.outputList, LexParser.symtab, visitor.tableMap, visitor.tempMap);
+   //   ircode.generateTiny();
   //    ircode.printTiny();
 
 
