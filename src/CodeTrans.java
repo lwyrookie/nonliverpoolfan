@@ -128,9 +128,11 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
       public void generateTiny() {
 
          Scope scope = (LexParser.symtab).get("GLOBAL");
-         for (String key : scope.symbolMap.keySet()) 
-            TinyOut.add ( typeTrans(scope.symbolMap.get(key).getType())+key+" "+ scope.symbolMap.get(key).getValue());  
-          
+         for (String key : scope.symbolMap.keySet()) {
+            if (scope.symbolMap.get(key).getType().contains("STRING"))
+            TinyOut.add ( typeTrans(scope.symbolMap.get(key).getType())+key+" "+ scope.symbolMap.get(key).getValue()); 
+            else   TinyOut.add ( typeTrans(scope.symbolMap.get(key).getType())+key);  
+          }
          TinyOut.add("push");
          TinyOut.add("jsr main");
          TinyOut.add("sys halt");
@@ -188,7 +190,9 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
 
 
      else if (command.contains("JSR")) {
+          pushToMem();
           TinyOut.add("jsr " + SubString[1] ); 
+          popToReg();
       }
       
       
@@ -206,7 +210,15 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
 
     }// end of for loop, take care, some more commands need be put in
 
-
+     private void pushToMem(){
+       for (int i=0; i<15; i++)
+       TinyOut.add("push "+"r"+Integer.toString(i));
+     }
+     
+     private void popToReg(){
+       for (int i=14; i>=0; i--)
+       TinyOut.add("pop "+"r"+Integer.toString(i));
+     }
 
 
 /*
@@ -990,12 +1002,16 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
 
   
       private void getTinyComp(String[] SubString){
-      System.out.println("INT compare check: "+ SubString[0]);
-            //String suffix = (SubString[0].charAt((SubString[0].length() - 1))); 
-            String suffix = SubString[0].substring(SubString[0].length() - 1);
+           // System.out.println("INT compare check: "+ SubString[0]);
+           // String suffix = SubString[0].substring(SubString[0].length() - 1);
+           // if(!suffix.contains("I"));
+            String suffix;
+            if(! SubString[0].contains("I"))
             suffix ="r";
+            else suffix="i";
+            
  
-            System.out.println("suffix is: " + suffix);
+           // System.out.println("suffix is: " + suffix);
 
             String tempReg = createTiny(SubString[2]); //may be a memory address
             if(!(SubString[2].contains("$T")))  {

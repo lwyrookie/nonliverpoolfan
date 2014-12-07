@@ -145,7 +145,8 @@ func_decl
 func_body         
 	:	decl stmt_list
 // where it prints?    
-    { newFunc.setLocalParReturn(localvarCount, paramvarCount);
+//assuming 15 registers
+    { newFunc.setLocalParReturn(localvarCount, paramvarCount,15);
       funcHub.put(newFunc.funcName, newFunc);
     //  System.out.println("function name" + newFunc.funcName);
     //  System.out.println("Local Count" + localvarCount);

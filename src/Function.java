@@ -34,16 +34,17 @@ public class Function {
 	 }
 	 
 	 
-	 public void setLocalParReturn(int loc, int par){
+	 public void setLocalParReturn(int loc, int par, int regCount){
 		 int i,memid;
          this.locNum =loc;
          this.parNum =par;
        //  System.out.println("parNum is "+ par + "locNum is "+locNum);
 		 for (i=1; i<=par; i++){
-			 this.functioninfo.put("$P"+Integer.toString(i), "$"+Integer.toString(i)); //setting parameter positions
+             memid = i+regCount+1;
+			 this.functioninfo.put("$P"+Integer.toString(i), "$"+Integer.toString(memid)); //setting parameter positions
 		 }
-		 
-		 this.functioninfo.put("$R","$"+Integer.toString(i));  //setting return position
+		 memid=i+regCount+1;
+		 this.functioninfo.put("$R","$"+Integer.toString(memid));  //setting return position
 		 
 		 for(i=1; i<=loc; i++){
 			 memid = -1*i;
