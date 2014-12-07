@@ -13,15 +13,15 @@ import java.util.HashMap;
 
 
     private ArrayList<String> IR;
-    private SymbolTable table;
-    private int paramIndex; //modify
-    private int labelIndex = 0;
+   // private SymbolTable table;
+   // private int paramIndex; //modify
+   // private int labelIndex = 0;
     private String labelIndicator = null;
-    private int linknum = 0;   //from count
-    private int RPosition = 0;
-    protected Map<String, Map<String, String>> TR = new LinkedHashMap();
-    protected Map<String, Map<String, Node>> tableMap = new LinkedHashMap();
-    protected Map<String, Integer> linkCount = new LinkedHashMap();
+  //  private int linknum = 0;   //from count
+ //   private int RPosition = 0;
+   // protected Map<String, Map<String, String>> TR = new LinkedHashMap();
+ //   protected Map<String, Map<String, Node>> tableMap = new LinkedHashMap();
+   // protected Map<String, Integer> linkCount = new LinkedHashMap();
     protected Map<String, ArrayList<String>> tempMap = new LinkedHashMap();	
    
 
@@ -49,12 +49,14 @@ import java.util.HashMap;
 
    
      //Map TR as something <scope, ($P1, $17)> as well as registernumber LOCAL temp, tempMap only stores temporary variables;
-    public  CodeTrans(ArrayList<String> outputList, SymbolTable table, Map<String, Map<String, Node>> tableMap, Map<String, ArrayList<String>> tempMap) {
+   // public  CodeTrans(ArrayList<String> outputList, SymbolTable table, Map<String, Map<String, Node>> tableMap, Map<String, ArrayList<String>> tempMap) {
+
+public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> tempMap) {
     this.IR = outputList;
-    this.table = table; 
-    this.paramIndex = 1;  
-    this.RPosition = this.paramIndex;
-    this.tableMap = tableMap;
+   // this.table = table; 
+    //this.paramIndex = 1;  
+  //  this.RPosition = this.paramIndex;
+  //  this.tableMap = tableMap;
     this.tempMap = tempMap;
 
   /*  for (String key : this.tableMap.keySet()) {
@@ -78,6 +80,8 @@ import java.util.HashMap;
       this.linknum = 0;
       this.RPosition = this.paramIndex+1;
 }*/
+
+   
 
 
     }
@@ -170,7 +174,7 @@ import java.util.HashMap;
          }
 
          else if (command.contains("LINK")) {
-         TinyOut.add("link " + this.linkCount.get(this.labelIndicator) );
+         TinyOut.add("link " + LexParser.funcHub.get(this.labelIndicator).locNum );
         }
 
          else if (command.contains("RET")) {
@@ -948,8 +952,10 @@ import java.util.HashMap;
        }
 
        else if ( (temp.contains("$P")) || (temp.contains("$L")) ){
-           if (((Map)this.TR.get(this.labelIndicator)).containsKey(temp)) 
-           return (String)((Map)this.TR.get(this.labelIndicator)).get(temp);
+          // if (((Map)this.TR.get(this.labelIndicator)).containsKey(temp)) 
+           //return (String)((Map)this.TR.get(this.labelIndicator)).get(temp);
+           if (LexParser.funcHub.get(labelIndicator).functioninfo.containsKey(temp))
+             return LexParser.funcHub.get(labelIndicator).functioninfo.get(temp);
       
        }
      //intliteral
