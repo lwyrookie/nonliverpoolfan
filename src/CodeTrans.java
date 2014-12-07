@@ -57,7 +57,7 @@ import java.util.HashMap;
     this.tableMap = tableMap;
     this.tempMap = tempMap;
 
-    for (String key : this.tableMap.keySet()) {
+  /*  for (String key : this.tableMap.keySet()) {
       Map newTR = new LinkedHashMap();
     for (Node each : (tableMap.get(key)).values()) {
       
@@ -77,7 +77,7 @@ import java.util.HashMap;
       this.linkCount.put(key, Integer.valueOf(this.linknum));
       this.linknum = 0;
       this.RPosition = this.paramIndex+1;
-}
+}*/
 
 
     }
