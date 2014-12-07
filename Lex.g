@@ -13,7 +13,10 @@ options {
 @members {
     public static SymbolTable symtab = new SymbolTable();
     public static Map<String, String> functionMap = new LinkedHashMap<String, String>();
+    public static LinkedHashMap<String, Function> funcHub= new LinkedHashMap<String, Function>();
+
     int count = 0;
+    Function newFunc;
     Scope currscope;
 	int paramvarCount = 0;
 	int localvarCount = 0;    
@@ -35,10 +38,10 @@ program
 //          Iterator it = entrySet.iterator();
 //          while(it.hasNext())
 //              System.out.println(it.next());
-              //{  
-                //System.out.println(symtab.toString());
-                //System.out.println("Local Count" + localvarCount);
-				//System.out.println("Parm Count" + paramvarCount);}  
+             // {  
+             //   System.out.println(symtab.toString());
+             //   System.out.println("Local Count" + localvarCount);
+			//	System.out.println("Parm Count" + paramvarCount);}  
 	;
 id
 	:	IDENTIFIER
@@ -132,6 +135,7 @@ func_decl
 	                            if($any_type.text.equalsIgnoreCase("FLOAT")) functionMap.put($id.text, "F");
 								if ($any_type.text.equalsIgnoreCase("VOID")) functionMap.put($id.text, "V");
 	                            symtab.pushScope($id.text);
+                                newFunc = new Function($id.text);//
 								localvarCount = 0;
 								paramvarCount = 0;}'(' param_decl_list')' 'BEGIN' func_body 'END'
     ;
@@ -140,6 +144,13 @@ func_decl
 
 func_body         
 	:	decl stmt_list
+// where it prints?    
+    { newFunc.setLocalParReturn(localvarCount, paramvarCount);
+      funcHub.put(newFunc.funcName, newFunc);
+    //  System.out.println("function name" + newFunc.funcName);
+    //  System.out.println("Local Count" + localvarCount);
+	//  System.out.println("Parm Count" + paramvarCount);  
+    }
     ; 
 
 /* Statement List */

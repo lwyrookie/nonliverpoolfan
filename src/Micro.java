@@ -28,6 +28,19 @@ public class Micro
         }
         return findIdNode(id, "GLOBAL");
   }*/
+
+
+
+
+
+
+
+
+
+
+
+
+
   public static void main(String[] args)
   {
     try
@@ -52,13 +65,15 @@ public class Micro
       node = Micro.findIdNode("hahaha", "GLOBAL");
       System.out.println(node);*/
       ParseTreeWalker walker = new ParseTreeWalker();
-      //ExtractMicroBaseListener extractor = new ExtractMicroBaseListener(parser);
-      //LexBaseListener exactor = new LexBaseListener (parser);
-      //walker.walk(extractor, tree);
-      SuperVisitor visitor = new SuperVisitor(LexParser.symtab, LexParser.functionMap); //?
-      visitor.visit(tree);
-      visitor.return3AC();
-      CodeTrans ircode = new CodeTrans(visitor.outputList, LexParser.symtab, visitor.tableMap, visitor.tempMap);
+
+
+
+/*reactivate following*/
+       SuperVisitor visitor = new SuperVisitor(LexParser.symtab, LexParser.functionMap); //?
+       visitor.visit(tree);
+       visitor.return3AC();
+      // CodeTrans ircode = new CodeTrans(visitor.outputList, LexParser.symtab, visitor.tableMap, visitor.tempMap);
+       CodeTrans ircode = new CodeTrans(visitor.outputList,visitor.tempMap);
       ircode.generateTiny();
       ircode.printTiny();
 

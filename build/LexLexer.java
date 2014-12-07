@@ -53,7 +53,10 @@ public class LexLexer extends Lexer {
 
 	    public static SymbolTable symtab = new SymbolTable();
 	    public static Map<String, String> functionMap = new LinkedHashMap<String, String>();
+	    public static LinkedHashMap<String, Function> funcHub= new LinkedHashMap<String, Function>();
+
 	    int count = 0;
+	    Function newFunc;
 	    Scope currscope;
 		int paramvarCount = 0;
 		int localvarCount = 0;    

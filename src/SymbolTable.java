@@ -39,6 +39,14 @@ public class SymbolTable {
 		return scopestack.pop();
 	}
 	
+
+    public Scope get(String scopetype){
+		for (Scope scope : this.scopestack.subList(0, this.scopestack.size())) {
+		   if (scope.Scopetype.equalsIgnoreCase(scopetype)) 
+           return scope;
+        }
+        return null;
+	}
 	
 	
 	
