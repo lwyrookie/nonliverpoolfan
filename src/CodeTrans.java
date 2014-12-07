@@ -7,8 +7,8 @@ import java.util.HashMap;
 
     public class CodeTrans {
 	public ArrayList<String> TinyOut = new ArrayList<String>(); // Stores the TinyOutlist
-	public LinkedHashMap<String, String> IrRegMap = new LinkedHashMap<String, String>(); //Stores the mapping between $T and r;
-    private int RegCount = -1;			
+	//public LinkedHashMap<String, String> IrRegMap = new LinkedHashMap<String, String>(); //Stores the mapping between $T and r;
+    //private int RegCount = -1;			
 
 
 
@@ -939,23 +939,29 @@ public  CodeTrans(ArrayList<String> outputList, Map<String, ArrayList<String>> t
 
 
      public String createTiny(String temp) {
+       Function targetFunc = LexParser.funcHub.get(labelIndicator);
        if (temp.contains("$T")){
-            String r;
+          
+            String r = targetFunc.functioninfo.get("$T"+Integer.toString(targetFunc.locNum));
+/*
             if (IrRegMap.get(temp) != null) 
-           //   return (IrRegMap.get(temp));
-             r = IrRegMap.get(temp);
+             return (IrRegMap.get(temp));
             
            this.RegCount += 1;
            r = "r" + Integer.toString(RegCount);
            IrRegMap.put(temp, r);
+*/         if (targetFunc.functioninfo.containsKey(temp))
+           return targetFunc.functioninfo.get(temp);
+           else
            return r;
+
        }
 
        else if ( (temp.contains("$P")) || (temp.contains("$L")) ){
           // if (((Map)this.TR.get(this.labelIndicator)).containsKey(temp)) 
            //return (String)((Map)this.TR.get(this.labelIndicator)).get(temp);
-           if (LexParser.funcHub.get(labelIndicator).functioninfo.containsKey(temp))
-             return LexParser.funcHub.get(labelIndicator).functioninfo.get(temp);
+           if (targetFunc.functioninfo.containsKey(temp))
+             return targetFunc.functioninfo.get(temp);
       
        }
      //intliteral

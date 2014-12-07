@@ -6,6 +6,7 @@ public class Function {
 	 public String funcName;
 	 public int locNum;
 	 public int parNum;
+     public int tempNum;
 	 
 	 public HashMap<String, String> functioninfo = new HashMap<String,String>(); //keeps all the memory assignment information of this function
 	 
@@ -52,15 +53,16 @@ public class Function {
 	 
 	 
 	 public void pushTempList(ArrayList<String> tempList){
+         this.tempNum = tempList.size();
 		 int i=-1*locNum;
-		 int j = tempList.size();
+		 //int j = tempList.size();
 		 for (String element : tempList) {
 			 i--;
 			  this.functioninfo.put(element, "$"+Integer.toString(i)); //assuming arraylist is increasing order of $T#
 			}
-		 i--;
-		 j++;
-		 this.functioninfo.put("$T"+Integer.toString(j), "$"+Integer.toString(i)); //leaving an extra slot, for further use.
+		// i--;
+		// j++;
+		// this.functioninfo.put("$T"+Integer.toString(j), "$"+Integer.toString(i)); //leaving an extra slot, for further use.
 		 
 		 
 		 

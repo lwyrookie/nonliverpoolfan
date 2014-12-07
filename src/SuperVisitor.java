@@ -115,8 +115,8 @@ public class SuperVisitor extends LexBaseVisitor<Node> {
        
 		outputList.add("LINK ");
 		visitChildren(ctx);
-        //createTemp(); 
-		tempIndex = 0;
+        createTemp(); 
+		//tempIndex = 0;
 
         LexParser.funcHub.get(this.functionRecord).pushTempList(tempMap.get(functionRecord));
 		if (ctx.any_type().getText().equals("VOID")) {
