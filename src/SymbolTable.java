@@ -9,15 +9,11 @@ public class SymbolTable {
 	protected ArrayList<Scope> allscope;
 	
 	public SymbolTable(){
-		init();
-	}
-	
-	protected void init(){
 		scopestack = new Stack<>();   //check the usage of new class
 		allscope= new ArrayList<>();
 		Scope globals = new Scope("GLOBAL", null); // no enclosing scope for the Global scope
 		scopestack.push(globals);
-		allscope.add(globals);				
+		allscope.add(globals);	
 	}
 	
 	public Scope pushScope(String scopetype) {            // we need a scopetype here
